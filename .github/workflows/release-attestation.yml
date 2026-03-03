@@ -1,0 +1,155 @@
+name: release-attestation
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release tag to attest (example: v1.2.3 or 1.2.3)."
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  attestations: write
+  contents: read
+
+jobs:
+  attest-release-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Resolve and validate release inputs
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG_EVENT: ${{ github.event.release.tag_name }}
+          RELEASE_TAG_INPUT: ${{ github.event.inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          validate_component() {
+            local value="$1"
+            local label="$2"
+
+            if [[ -z "${value}" ]]; then
+              echo "${label} must not be empty"
+              exit 1
+            fi
+
+            if [[ ! "${value}" =~ ^[0-9A-Za-z][0-9A-Za-z._-]{0,127}$ ]]; then
+              echo "Invalid ${label}: ${value}"
+              echo "Allowed: 1-128 chars, start with [A-Za-z0-9], then [A-Za-z0-9._-]"
+              exit 1
+            fi
+
+            if [[ "${value}" == *".."* || "${value}" == *"/"* || "${value}" == *"\\"* ]]; then
+              echo "Invalid ${label}: ${value}"
+              echo "Path-like values are not allowed ('..', '/', '\\')."
+              exit 1
+            fi
+          }
+
+          validate_release_version() {
+            local value="$1"
+            local label="$2"
+
+            validate_component "${value}" "${label}"
+
+            if [[ ! "${value}" =~ ^v?[0-9][0-9A-Za-z._-]{0,127}$ ]]; then
+              echo "Invalid ${label}: ${value}"
+              echo "Expected semantic-like version starting with a digit, with optional single leading 'v' (e.g. 1.2.3 or v1.2.3)."
+              exit 1
+            fi
+          }
+
+          if [[ "${EVENT_NAME}" == "release" ]]; then
+            release_tag="${RELEASE_TAG_EVENT}"
+          else
+            release_tag="${RELEASE_TAG_INPUT}"
+          fi
+
+          validate_release_version "${release_tag}" "release tag"
+
+          version="${release_tag#v}"
+          validate_release_version "${version}" "derived version"
+
+          out_dir="dist/${version}"
+
+          {
+            echo "release_tag=${release_tag}"
+            echo "version=${version}"
+            echo "out_dir=${out_dir}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Download release assets from GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+          OUT_DIR: ${{ steps.release.outputs.out_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${OUT_DIR}"
+
+          gh release download "${RELEASE_TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --dir "${OUT_DIR}" \
+            --pattern "VIBEKIT_SEED-${VERSION}-*.md" \
+            --pattern "vibekit_seed_install.py" \
+            --pattern "SHA256SUMS"
+
+      - name: Resolve downloaded asset paths
+        id: assets
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          OUT_DIR: ${{ steps.release.outputs.out_dir }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          seed_files=( "${OUT_DIR}"/VIBEKIT_SEED-"${VERSION}"-*.md )
+          if [[ "${#seed_files[@]}" -ne 1 ]]; then
+            echo "Expected exactly 1 seed file in ${OUT_DIR}, found ${#seed_files[@]}"
+            ls -la "${OUT_DIR}"
+            exit 1
+          fi
+
+          seed_file="${seed_files[0]}"
+          installer_file="${OUT_DIR}/vibekit_seed_install.py"
+          checksums_file="${OUT_DIR}/SHA256SUMS"
+
+          test -f "${seed_file}"
+          test -f "${installer_file}"
+          test -f "${checksums_file}"
+
+          {
+            echo "seed_file=${seed_file}"
+            echo "installer_file=${installer_file}"
+            echo "checksums_file=${checksums_file}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Upload attested release assets (workflow artifact)
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-assets-${{ steps.release.outputs.version }}
+          path: |
+            ${{ steps.assets.outputs.seed_file }}
+            ${{ steps.assets.outputs.installer_file }}
+            ${{ steps.assets.outputs.checksums_file }}
+          if-no-files-found: error
+
+      - name: Attest downloaded release assets
+        uses: actions/attest-build-provenance@62fc1d596301d0ab9914e1fec14dc5c8d93f65cd # v3.2.0
+        with:
+          subject-path: |
+            ${{ steps.assets.outputs.seed_file }}
+            ${{ steps.assets.outputs.installer_file }}
+            ${{ steps.assets.outputs.checksums_file }}
