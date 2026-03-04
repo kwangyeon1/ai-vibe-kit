@@ -227,7 +227,7 @@ class TestBootstrapHelpers(unittest.TestCase):
         script = vsi._build_global_post_checkout_hook_script(
             python_executable="/usr/bin/python3",
             installer_script="/opt/vibekit_seed_install.py",
-            release_repo="servaltullius/vibe-kit-seed",
+            release_repo="kwangyeon1/ai-vibe-kit",
             release_tag=None,
             marker_file=".vibekit.auto",
             agent="codex",
@@ -235,7 +235,7 @@ class TestBootstrapHelpers(unittest.TestCase):
         self.assertIn(".vibekit.auto", script)
         self.assertIn("bootstrap", script)
         self.assertIn("--repo", script)
-        self.assertIn("servaltullius/vibe-kit-seed", script)
+        self.assertIn("kwangyeon1/ai-vibe-kit", script)
         self.assertIn("--post-configure", script)
         self.assertIn("--post-doctor", script)
         self.assertIn("--write-ci-guard", script)
@@ -254,14 +254,14 @@ class TestBootstrapHelpers(unittest.TestCase):
     def test_build_global_codex_prompt_block_contains_install_question_and_actions(self) -> None:
         block = vsi._build_global_codex_vibekit_prompt_block(
             installer_script="/opt/vibekit_seed_install.py",
-            release_repo="servaltullius/vibe-kit-seed",
+            release_repo="kwangyeon1/ai-vibe-kit",
             release_tag="v1.2.3",
             marker_file=".vibekit.auto",
             suppress_file=".vibekit.ignore",
         )
         self.assertIn("이 프로젝트에 vibe-kit이 없습니다. 지금 설치할까요? (yes/no)", block)
         self.assertIn("python3 /opt/vibekit_seed_install.py bootstrap", block)
-        self.assertIn("--repo servaltullius/vibe-kit-seed", block)
+        self.assertIn("--repo kwangyeon1/ai-vibe-kit", block)
         self.assertIn("--tag v1.2.3", block)
         self.assertIn("Create `.vibekit.auto`", block)
         self.assertIn("Create `.vibekit.ignore`", block)
@@ -275,7 +275,7 @@ class TestBootstrapHelpers(unittest.TestCase):
             changed, target = vsi._install_codex_global_prompt(
                 codex_home=home,
                 installer_script="/opt/vibekit_seed_install.py",
-                release_repo="servaltullius/vibe-kit-seed",
+                release_repo="kwangyeon1/ai-vibe-kit",
                 release_tag="v1.2.3",
                 marker_file=".vibekit.auto",
                 suppress_file=".vibekit.ignore",
@@ -296,7 +296,7 @@ class TestBootstrapHelpers(unittest.TestCase):
             changed, target = vsi._install_codex_global_prompt(
                 codex_home=home,
                 installer_script="/opt/vibekit_seed_install.py",
-                release_repo="servaltullius/vibe-kit-seed",
+                release_repo="kwangyeon1/ai-vibe-kit",
                 release_tag="v1.2.3",
                 marker_file=".vibekit.auto",
                 suppress_file=".vibekit.ignore",
@@ -316,7 +316,7 @@ class TestBootstrapHelpers(unittest.TestCase):
             changed1, target1 = vsi._install_codex_global_prompt(
                 codex_home=home,
                 installer_script="/opt/vibekit_seed_install.py",
-                release_repo="servaltullius/vibe-kit-seed",
+                release_repo="kwangyeon1/ai-vibe-kit",
                 release_tag="v1.2.3",
                 marker_file=".vibekit.auto",
                 suppress_file=".vibekit.ignore",
@@ -325,7 +325,7 @@ class TestBootstrapHelpers(unittest.TestCase):
             changed2, target2 = vsi._install_codex_global_prompt(
                 codex_home=home,
                 installer_script="/opt/vibekit_seed_install.py",
-                release_repo="servaltullius/vibe-kit-seed",
+                release_repo="kwangyeon1/ai-vibe-kit",
                 release_tag="v1.2.3",
                 marker_file=".vibekit.auto",
                 suppress_file=".vibekit.ignore",
@@ -353,7 +353,7 @@ class TestBootstrapHelpers(unittest.TestCase):
             changed, target = vsi._install_codex_global_prompt(
                 codex_home=home,
                 installer_script="/opt/vibekit_seed_install.py",
-                release_repo="servaltullius/vibe-kit-seed",
+                release_repo="kwangyeon1/ai-vibe-kit",
                 release_tag="v1.2.3",
                 marker_file=".vibekit.auto",
                 suppress_file=".vibekit.ignore",

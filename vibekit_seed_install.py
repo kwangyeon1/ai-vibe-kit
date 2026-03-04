@@ -38,7 +38,7 @@ ALLOWED_EXACT: set[str] = {
     ".vibe/brain/requirements.txt",
 }
 
-DEFAULT_RELEASE_REPO = "servaltullius/vibe-kit-seed"
+DEFAULT_RELEASE_REPO = "kwangyeon1/ai-vibe-kit"
 DEFAULT_CODEX_HOME = Path("~/.codex").expanduser()
 CODEX_PROMPT_HEADER = "## Vibe-kit Auto-Prompt (Missing in Repo)"
 CODEX_PROMPT_START = "<!-- vibekit:auto-prompt:start -->"
