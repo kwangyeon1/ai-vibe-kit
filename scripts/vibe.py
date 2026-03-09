@@ -263,6 +263,14 @@ def main(argv: list[str]) -> int:
         help="Check agent instruction files include vibe-kit first-action entrypoints.",
     )
     p_agents_doctor.add_argument("--fail", action="store_true")
+    p_agents_sync = agents_sub.add_parser(
+        "sync",
+        help="Upsert vibe-kit workflow notes into scaffolded agent instruction files.",
+    )
+    p_agents_sync.add_argument("--agent", default="all", help="Target file set: codex|claude|copilot|cursor|gemini|all.")
+    p_agents_sync.add_argument("--create-missing", action="store_true")
+    p_agents_sync.add_argument("--dry-run", action="store_true")
+    p_agents_sync.add_argument("--fail-if-changed", action="store_true")
 
     p_precommit = sub.add_parser("precommit", help="Run staged-only precommit chain (if git exists).")
     p_precommit.add_argument("--run-tests", action="store_true", help="Also run core tests (slower).")
@@ -408,6 +416,15 @@ def main(argv: list[str]) -> int:
             if args.fail:
                 doctor_args.append("--fail")
             return _run(brain / "agents_doctor.py", doctor_args)
+        if args.agents_cmd == "sync":
+            sync_args = [f"--agent={args.agent}"]
+            if args.create_missing:
+                sync_args.append("--create-missing")
+            if args.dry_run:
+                sync_args.append("--dry-run")
+            if args.fail_if_changed:
+                sync_args.append("--fail-if-changed")
+            return _run(brain / "agents_sync.py", sync_args)
         raise RuntimeError(f"unknown agents cmd: {args.agents_cmd}")
 
     raise RuntimeError(f"unknown cmd: {args.cmd}")
